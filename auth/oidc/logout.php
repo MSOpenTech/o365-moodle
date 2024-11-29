@@ -23,6 +23,8 @@
  * @copyright (C) 2014 onwards Microsoft, Inc. (http://microsoft.com/)
  */
 
+use core\session\manager;
+
 // phpcs:ignore moodle.Files.RequireLogin.Missing
 require_once(__DIR__ . '/../../config.php');
 
@@ -32,8 +34,8 @@ $PAGE->set_context(context_system::instance());
 $sid = optional_param('sid', '', PARAM_TEXT);
 
 if ($sid) {
-    if ($authoidctokenrecord = $DB->get_record('auth_oidc_token', ['sid' => $sid])) {
-        if ($authoidctokenrecord->userid == $USER->id) {
+    if ($authoidcsidrecord = $DB->get_record('auth_oidc_sid', ['sid' => $sid])) {
+        if ($authoidcsidrecord->userid == $USER->id) {
             $authsequence = get_enabled_auth_plugins(); // Auths, in sequence.
             foreach ($authsequence as $authname) {
                 $authplugin = get_auth_plugin($authname);
@@ -41,6 +43,9 @@ if ($sid) {
             }
 
             require_logout();
+
+            // Log the user out from all sessions.
+            manager::destroy_user_sessions($authoidcsidrecord->userid);
         }
     }
 }
